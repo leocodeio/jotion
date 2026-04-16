@@ -16,12 +16,12 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { useMediaQuery } from "usehooks-ts";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { UserItem } from "@/components/main/user-item";
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { useMutation } from "@/lib/local-client";
+import { api } from "@/lib/local-api";
 import { Item } from "@/components/main/item";
 import { toast } from "sonner";
 import { DocumentList } from "@/components/main/document-list";

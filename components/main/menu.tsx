@@ -1,10 +1,8 @@
 "use client";
 
-import { Id } from "@/convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { useMutation } from "@/lib/local-client";
+import { api } from "@/lib/local-api";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -18,12 +16,11 @@ import { Button } from "@/components/ui/button";
 import { MoreHorizontal, Trash } from "lucide-react";
 
 interface MenuProps {
-  documentId: Id<"documents">;
+  documentId: string;
 }
 
 export const Menu = ({ documentId }: MenuProps) => {
   const router = useRouter();
-  const { user } = useUser();
   const archive = useMutation(api.documents.archive);
 
   const onArchive = () => {
@@ -53,9 +50,7 @@ export const Menu = ({ documentId }: MenuProps) => {
           <Trash className="h-4 w-4 mr-2" /> Delete
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <div className="text-xs text-muted-foreground p-2">
-          Last edited by: {user?.fullName}
-        </div>
+        <div className="text-xs text-muted-foreground p-2">Stored locally</div>
       </DropdownMenuContent>
     </DropdownMenu>
   );

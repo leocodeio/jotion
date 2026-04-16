@@ -1,8 +1,8 @@
 "use client";
 
-import { Doc } from "@/convex/_generated/dataModel";
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { type DocumentRecord } from "@/lib/local/types";
+import { useMutation } from "@/lib/local-client";
+import { api } from "@/lib/local-api";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -15,7 +15,7 @@ import { Check, Copy, Globe } from "lucide-react";
 import { useOrigin } from "@/hooks/use-origin";
 
 interface PublishProps {
-  initialData: Doc<"documents">;
+  initialData: DocumentRecord;
 }
 
 export const Publish = ({ initialData }: PublishProps) => {

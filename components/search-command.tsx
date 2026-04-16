@@ -1,9 +1,8 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { useQuery } from "@/lib/local-client";
+import { api } from "@/lib/local-api";
 import { useSearch } from "@/hooks/use-search";
 import { useEffect, useState } from "react";
 import {
@@ -17,7 +16,6 @@ import {
 import { File } from "lucide-react";
 
 export const SearchCommand = () => {
-  const { user } = useUser();
   const router = useRouter();
   const documents = useQuery(api.documents.getSearch);
   const [isMounted, setIsMounted] = useState(false);
@@ -51,7 +49,7 @@ export const SearchCommand = () => {
 
   return (
     <CommandDialog open={isOpen} onOpenChange={onClose}>
-      <CommandInput placeholder={`Search ${user?.fullName}'s Jotion...`} />
+      <CommandInput placeholder="Search your local Jotion..." />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
         <CommandGroup heading="Documents">

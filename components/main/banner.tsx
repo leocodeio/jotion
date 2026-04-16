@@ -1,15 +1,14 @@
 "use client";
 
-import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
-import { useMutation } from "convex/react";
+import { api } from "@/lib/local-api";
+import { useMutation } from "@/lib/local-client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ConfirmModal } from "@/components/modals/confirm-modal";
 
 interface BannerProps {
-  documentId: Id<"documents">;
+  documentId: string;
 }
 
 export const Banner = ({ documentId }: BannerProps) => {

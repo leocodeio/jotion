@@ -1,4 +1,4 @@
-// "use client";
+"use client";
 
 import {
   ChevronDown,
@@ -8,12 +8,11 @@ import {
   Plus,
   Trash,
 } from "lucide-react";
-import { Id } from "@/convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { useMutation } from "@/lib/local-client";
+import { api } from "@/lib/local-api";
 import React from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -23,10 +22,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useUser } from "@clerk/nextjs";
 
 interface ItemProps {
-  id?: Id<"documents">;
+  id?: string;
   documentIcon?: string;
   active?: boolean;
   expanded?: boolean;
@@ -50,7 +48,6 @@ export const Item = ({
   onExpand,
   expanded,
 }: ItemProps) => {
-  const { user } = useUser();
   const router = useRouter();
   const create = useMutation(api.documents.create);
   const archive = useMutation(api.documents.archive);
@@ -147,9 +144,7 @@ export const Item = ({
                 Delete
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <div className="text-xs text-muted-foreground p-2">
-                Last edited by: {user?.fullName}
-              </div>
+              <div className="text-xs text-muted-foreground p-2">Stored locally</div>
             </DropdownMenuContent>
           </DropdownMenu>
 

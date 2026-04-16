@@ -1,9 +1,8 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
+import { useQuery } from "@/lib/local-client";
+import { api } from "@/lib/local-api";
 import { MenuIcon } from "lucide-react";
 import { Title } from "@/components/main/title";
 import { Banner } from "@/components/main/banner";
@@ -19,7 +18,7 @@ export const Navbar = ({ isCollapsed, onResetWidth }: NavbarProps) => {
   const params = useParams();
 
   const document = useQuery(api.documents.getById, {
-    documentId: params.documentId as Id<"documents">,
+    documentId: String(params.documentId),
   });
 
   if (document === undefined) {

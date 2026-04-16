@@ -1,18 +1,25 @@
 "use client";
 
-import { useConvexAuth } from "convex/react";
 import { Spinner } from "@/components/spinner";
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Navigation } from "@/components/main/navigation";
 import { SearchCommand } from "@/components/search-command";
-import React from "react";
+import React, { useEffect } from "react";
+import { useLocalConfig } from "@/hooks/use-local-config";
 
 export default function MainLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated, isLoading } = useConvexAuth();
+  const router = useRouter();
+  const { isConfigured, isLoading } = useLocalConfig();
+
+  useEffect(() => {
+    if (!isLoading && !isConfigured) {
+      router.replace("/setup");
+    }
+  }, [isConfigured, isLoading, router]);
 
   if (isLoading) {
     return (
@@ -22,8 +29,8 @@ export default function MainLayout({
     );
   }
 
-  if (!isAuthenticated) {
-    return redirect("/");
+  if (!isConfigured) {
+    return null;
   }
 
   return (

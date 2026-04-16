@@ -1,15 +1,15 @@
 "use client";
 
-import { Doc } from "@/convex/_generated/dataModel";
+import { type DocumentRecord } from "@/lib/local/types";
 import React, { useRef, useState } from "react";
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { useMutation } from "@/lib/local-client";
+import { api } from "@/lib/local-api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface TitleProps {
-  initialData: Doc<"documents">;
+  initialData: DocumentRecord;
 }
 
 export const Title = ({ initialData }: TitleProps) => {

@@ -1,8 +1,8 @@
 "use client";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { useMutation, useQuery } from "@/lib/local-client";
+import { api } from "@/lib/local-api";
 import { Toolbar } from "@/components/toolbar";
 import { Cover } from "@/components/cover";
 import { useMemo } from "react";
@@ -16,14 +16,12 @@ export default function DocumentIdPage() {
     [],
   );
 
-  // @ts-ignore
-  const document = useQuery(api.documents.getById, { documentId: documentId });
+  const document = useQuery(api.documents.getById, { documentId: String(documentId) });
 
   const update = useMutation(api.documents.update);
 
   const onChange = (content: string) => {
-    // @ts-ignore
-    update({ id: documentId, content });
+    update({ id: String(documentId), content });
   };
 
   if (document === undefined) {

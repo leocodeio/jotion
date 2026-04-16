@@ -1,10 +1,9 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { useMutation, useQuery } from "@/lib/local-client";
+import { api } from "@/lib/local-api";
 import React, { useState } from "react";
-import { Id } from "@/convex/_generated/dataModel";
 import { toast } from "sonner";
 import { Spinner } from "@/components/spinner";
 import { Search, Trash, Undo } from "lucide-react";
@@ -30,7 +29,7 @@ export const TrashBox = () => {
 
   const onRestore = (
     event: React.MouseEvent<HTMLDivElement, MouseEvent>,
-    documentId: Id<"documents">,
+    documentId: string,
   ) => {
     event.stopPropagation();
     const promise = restore({ id: documentId });
@@ -42,7 +41,7 @@ export const TrashBox = () => {
     });
   };
 
-  const onRemove = (documentId: Id<"documents">) => {
+  const onRemove = (documentId: string) => {
     const promise = remove({ id: documentId });
 
     toast.promise(promise, {
@@ -51,7 +50,7 @@ export const TrashBox = () => {
       error: " Failed to delete note.",
     });
 
-    if (params.documentId === documentId) router.push("/documents");
+    if (String(params.documentId) === documentId) router.push("/documents");
   };
 
   if (documents === undefined)

@@ -1,18 +1,16 @@
 "use client";
 
-import { Doc, Id } from "@/convex/_generated/dataModel";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { useQuery } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { useQuery } from "@/lib/local-client";
+import { api } from "@/lib/local-api";
 import { Item } from "@/components/main/item";
 import { cn } from "@/lib/utils";
 import { FileIcon } from "lucide-react";
 
 interface DocumentListProps {
-  parentDocumentId?: Id<"documents">;
+  parentDocumentId?: string;
   level?: number;
-  data?: Doc<"documents">[];
 }
 
 export const DocumentList = ({
@@ -70,7 +68,7 @@ export const DocumentList = ({
             onClick={() => onRedirect(document._id)}
             icon={FileIcon}
             documentIcon={document.icon}
-            active={params.documentId === document._id}
+            active={String(params.documentId) === document._id}
             level={level}
             onExpand={() => onExpand(document._id)}
             expanded={expanded[document._id]}

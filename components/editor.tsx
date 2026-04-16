@@ -1,12 +1,9 @@
 "use client";
 
-import { useTheme } from "next-themes";
-import { useEdgeStore } from "@/lib/edgestore";
-import { BlockNoteEditor } from "@blocknote/core";
-import { useCreateBlockNote } from "@blocknote/react";
-import { BlockNoteView } from "@blocknote/mantine";
-import "@blocknote/mantine/style.css";
-import "@blocknote/core/fonts/inter.css";
+import { useState } from "react";
+import { uploadMediaFile } from "@/lib/local-media-client";
+import { Button } from "@/components/ui/button";
+import { ImageIcon } from "lucide-react";
 
 interface EditorProps {
   onChange: (value: string) => void;
@@ -15,28 +12,64 @@ interface EditorProps {
 }
 
 const Editor = ({ onChange, initialContent, editable }: EditorProps) => {
-  const { resolvedTheme } = useTheme();
-  const { edgestore } = useEdgeStore();
+  const [value, setValue] = useState(initialContent ?? "");
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleUpload = async (file: File) => {
-    const response = await edgestore.publicFiles.upload({ file });
-    return response.url;
+  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const url = await uploadMediaFile(file);
+      const nextValue = `${value}\n\n![${file.name}](${url})`.trim();
+      setValue(nextValue);
+      onChange(nextValue);
+    } finally {
+      setIsUploading(false);
+      event.target.value = "";
+    }
   };
 
-  const editor: BlockNoteEditor = useCreateBlockNote({
-    initialContent: initialContent ? JSON.parse(initialContent) : undefined,
-    uploadFile: handleUpload,
-  });
+  const onTextChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const nextValue = event.target.value;
+    setValue(nextValue);
+    onChange(nextValue);
+  };
 
   return (
-    <div>
-      <BlockNoteView
-        editable={editable}
-        editor={editor}
-        onChange={() => {
-          JSON.stringify(editor.document, null, 2);
-        }}
-        theme={resolvedTheme === "dark" ? "dark" : "light"}
+    <div className="space-y-3">
+      {editable !== false && (
+        <div className="flex items-center gap-2">
+          <label htmlFor="editor-image-upload">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              disabled={isUploading}
+              asChild
+            >
+              <span>
+                <ImageIcon className="h-4 w-4 mr-2" />
+                {isUploading ? "Uploading..." : "Insert image"}
+              </span>
+            </Button>
+          </label>
+          <input
+            id="editor-image-upload"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleUpload}
+          />
+        </div>
+      )}
+      <textarea
+        value={value}
+        onChange={onTextChange}
+        readOnly={editable === false}
+        className="w-full min-h-[420px] border border-input rounded-md bg-transparent p-3 text-base resize-y outline-none focus-visible:ring-2 focus-visible:ring-ring"
       />
     </div>
   );
