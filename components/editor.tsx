@@ -22,6 +22,7 @@ import Image from "next/image";
 import {
   CheckSquare2,
   ChevronDownSquare,
+  ChevronRight,
   CornerDownLeft,
   ImageIcon,
   KanbanSquare,
@@ -249,7 +250,7 @@ const MARKDOWN_COMPONENTS: Components = {
       return (
         <li
           className={cn(
-            "my-1 -ml-2 flex list-none items-start gap-2 rounded-md px-2 py-1 leading-7 marker:hidden",
+            "my-1 -ml-2 flex list-none items-center gap-2 rounded-md px-2 py-1 leading-7 transition-colors hover:bg-muted/25 marker:hidden",
             className,
           )}
           {...props}
@@ -311,14 +312,12 @@ const MARKDOWN_COMPONENTS: Components = {
   summary: ({ className, children, ...props }) => (
     <summary
       className={cn(
-        "flex list-none cursor-pointer items-center gap-2 font-medium text-foreground [&::-webkit-details-marker]:hidden",
+        "flex list-none cursor-pointer select-none items-center gap-2 font-medium text-foreground transition-colors hover:text-foreground/90 [&::-webkit-details-marker]:hidden",
         className,
       )}
       {...props}
     >
-      <span className="inline-block text-[10px] text-muted-foreground transition-transform group-open:rotate-90">
-        ▶
-      </span>
+      <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-150 group-open:rotate-90" />
       <span>{children}</span>
     </summary>
   ),
@@ -329,7 +328,7 @@ const MARKDOWN_COMPONENTS: Components = {
           {...props}
           disabled
           className={cn(
-            "mt-1 h-4 w-4 shrink-0 rounded border border-input align-middle accent-primary",
+            "h-4 w-4 shrink-0 rounded border border-input align-middle accent-primary",
             className,
           )}
         />
@@ -401,13 +400,22 @@ const Editor = ({ onChange, initialContent, editable }: EditorProps) => {
         replacement: (_content, node) => {
           const detailsNode = node as HTMLElement;
           const summaryNode = detailsNode.querySelector("summary");
-          const summaryText = summaryNode?.textContent?.trim() || "Toggle";
+          let summaryText = "Toggle";
+          if (summaryNode) {
+            const summaryClone = summaryNode.cloneNode(true) as HTMLElement;
+            summaryClone
+              .querySelectorAll("[data-jotion-toggle-chevron], [data-lucide='chevron-right']")
+              .forEach((markerNode) => {
+                markerNode.remove();
+              });
+            summaryText = summaryClone.textContent?.trim() || "Toggle";
+          }
 
-          const clone = detailsNode.cloneNode(true) as HTMLElement;
-          const cloneSummary = clone.querySelector("summary");
+          const detailsClone = detailsNode.cloneNode(true) as HTMLElement;
+          const cloneSummary = detailsClone.querySelector("summary");
           if (cloneSummary) cloneSummary.remove();
 
-          const bodyHtml = clone.innerHTML.trim();
+          const bodyHtml = detailsClone.innerHTML.trim();
           const convertedBody = bodyHtml ? service.turndown(bodyHtml).trim() : "";
           const bodyMarkdown = convertedBody || bodyHtml;
 
@@ -507,6 +515,92 @@ const Editor = ({ onChange, initialContent, editable }: EditorProps) => {
     });
   };
 
+  const normalizeVisualBlockContainers = (rootElement: HTMLElement) => {
+    rootElement.querySelectorAll("summary input[type='checkbox']").forEach((checkboxNode) => {
+      checkboxNode.remove();
+    });
+
+    rootElement
+      .querySelectorAll("details, div[data-jotion-kanban]")
+      .forEach((blockNode) => {
+        const blockElement = blockNode as HTMLElement;
+        const listItemElement = blockElement.closest("li");
+        if (!listItemElement) return;
+
+        listItemElement
+          .querySelectorAll(":scope > input[type='checkbox']")
+          .forEach((checkboxNode) => checkboxNode.remove());
+
+        Array.from(listItemElement.childNodes).forEach((childNode) => {
+          if (childNode.nodeType !== Node.TEXT_NODE) return;
+          if (!childNode.textContent?.trim()) childNode.remove();
+        });
+
+        const listContainer = listItemElement.closest("ul,ol") as HTMLElement | null;
+        if (!listContainer) return;
+
+        const isSoleChild =
+          listItemElement.childElementCount === 1 && listItemElement.firstElementChild === blockElement;
+
+        if (isSoleChild) {
+          listItemElement.replaceWith(blockElement);
+        } else {
+          blockElement.remove();
+          listContainer.insertAdjacentElement("afterend", blockElement);
+        }
+
+        if (!listContainer.querySelector("li")) {
+          listContainer.remove();
+        }
+      });
+  };
+
+  const enhanceVisualToggleMarkers = (rootElement: HTMLElement) => {
+    rootElement.querySelectorAll("details > summary").forEach((summaryNode) => {
+      const summaryElement = summaryNode as HTMLElement;
+      const existingChevron = summaryElement.querySelector("[data-jotion-toggle-chevron]");
+      if (existingChevron) return;
+
+      summaryElement
+        .querySelectorAll("[data-lucide='chevron-right']")
+        .forEach((iconNode) => iconNode.remove());
+
+      const chevron = document.createElement("span");
+      chevron.setAttribute("data-jotion-toggle-chevron", "true");
+      chevron.textContent = "›";
+      chevron.style.display = "inline-block";
+      chevron.style.width = "14px";
+      chevron.style.textAlign = "center";
+      chevron.style.fontSize = "16px";
+      chevron.style.fontWeight = "600";
+      chevron.style.lineHeight = "1";
+      chevron.style.color = "hsl(var(--muted-foreground))";
+      chevron.style.marginRight = "2px";
+      chevron.style.transition = "transform 150ms ease";
+
+      const detailsElement = summaryElement.closest("details");
+      if (detailsElement?.hasAttribute("open")) {
+        chevron.style.transform = "rotate(90deg)";
+      }
+
+      summaryElement.style.display = "flex";
+      summaryElement.style.alignItems = "center";
+      summaryElement.style.cursor = "pointer";
+      summaryElement.style.listStyle = "none";
+
+      summaryElement.prepend(chevron);
+    });
+
+    rootElement.querySelectorAll("details").forEach((detailsNode) => {
+      const detailsElement = detailsNode as HTMLDetailsElement;
+      const summaryElement = detailsElement.querySelector("summary");
+      const chevron = summaryElement?.querySelector("[data-jotion-toggle-chevron]") as HTMLElement | null;
+      if (!chevron) return;
+
+      chevron.style.transform = detailsElement.open ? "rotate(90deg)" : "rotate(0deg)";
+    });
+  };
+
   const styleVisualTaskLists = (rootElement: HTMLElement) => {
     rootElement.querySelectorAll("ul").forEach((listElement) => {
       if (!listElement.querySelector("input[type='checkbox']")) return;
@@ -520,6 +614,21 @@ const Editor = ({ onChange, initialContent, editable }: EditorProps) => {
 
       (listItemElement as HTMLElement).style.listStyleType = "none";
       (listItemElement as HTMLElement).style.marginLeft = "0";
+      (listItemElement as HTMLElement).style.display = "flex";
+      (listItemElement as HTMLElement).style.alignItems = "center";
+      (listItemElement as HTMLElement).style.gap = "0.5rem";
+
+      const checkbox = listItemElement.querySelector("input[type='checkbox']") as HTMLInputElement | null;
+      if (checkbox) {
+        checkbox.style.margin = "0";
+        checkbox.style.flexShrink = "0";
+      }
+
+      listItemElement.querySelectorAll("p").forEach((paragraphElement) => {
+        const paragraph = paragraphElement as HTMLElement;
+        paragraph.style.margin = "0";
+        paragraph.style.display = "inline";
+      });
     });
   };
 
@@ -662,8 +771,10 @@ const Editor = ({ onChange, initialContent, editable }: EditorProps) => {
     if (!editorElement) return;
 
     editorElement.innerHTML = value.trim() ? toHtml(value) : "<p></p>";
+    normalizeVisualBlockContainers(editorElement);
     normalizeVisualToggleLists(editorElement);
     styleVisualTaskLists(editorElement);
+    enhanceVisualToggleMarkers(editorElement);
   }, [editorMode, value]);
 
   useEffect(() => {
@@ -779,8 +890,10 @@ const Editor = ({ onChange, initialContent, editable }: EditorProps) => {
       selection.addRange(range);
     }
 
+    normalizeVisualBlockContainers(editorElement);
     normalizeVisualToggleLists(editorElement);
     styleVisualTaskLists(editorElement);
+    enhanceVisualToggleMarkers(editorElement);
     syncVisualToMarkdown(editorElement.innerHTML);
     closeSlashCommandMenu();
   };
@@ -909,8 +1022,10 @@ const Editor = ({ onChange, initialContent, editable }: EditorProps) => {
           selection.removeAllRanges();
           selection.addRange(nextRange);
 
+          normalizeVisualBlockContainers(editorElement);
           normalizeVisualToggleLists(editorElement);
           styleVisualTaskLists(editorElement);
+          enhanceVisualToggleMarkers(editorElement);
           syncVisualToMarkdown(editorElement.innerHTML);
         }
       } else {
@@ -996,14 +1111,17 @@ const Editor = ({ onChange, initialContent, editable }: EditorProps) => {
   };
 
   const onVisualInput = (event: React.FormEvent<HTMLDivElement>) => {
+    normalizeVisualBlockContainers(event.currentTarget);
     normalizeVisualToggleLists(event.currentTarget);
     styleVisualTaskLists(event.currentTarget);
+    enhanceVisualToggleMarkers(event.currentTarget);
     updateVisualSlashContext(event.currentTarget);
     syncVisualToMarkdown(event.currentTarget.innerHTML);
   };
 
   const onVisualMouseUp = (event: React.MouseEvent<HTMLDivElement>) => {
-    const targetElement = event.target instanceof Element ? event.target : null;
+    const rawTarget = event.target as Node | null;
+    const targetElement = rawTarget instanceof Element ? rawTarget : rawTarget?.parentElement ?? null;
     const kanbanPlaceholder = targetElement?.closest("[data-jotion-kanban-index]");
     if (kanbanPlaceholder && editable !== false) {
       const blockIndex = Number(kanbanPlaceholder.getAttribute("data-jotion-kanban-index"));
@@ -1070,7 +1188,9 @@ const Editor = ({ onChange, initialContent, editable }: EditorProps) => {
           selection.removeAllRanges();
           selection.addRange(nextRange);
 
+          normalizeVisualBlockContainers(event.currentTarget);
           styleVisualTaskLists(event.currentTarget);
+          enhanceVisualToggleMarkers(event.currentTarget);
           syncVisualToMarkdown(event.currentTarget.innerHTML);
           closeSlashCommandMenu();
           return;
@@ -1117,8 +1237,10 @@ const Editor = ({ onChange, initialContent, editable }: EditorProps) => {
   const onVisualBlur = (event: React.FocusEvent<HTMLDivElement>) => {
     isVisualEditingRef.current = false;
     closeSlashCommandMenu();
+    normalizeVisualBlockContainers(event.currentTarget);
     normalizeVisualToggleLists(event.currentTarget);
     styleVisualTaskLists(event.currentTarget);
+    enhanceVisualToggleMarkers(event.currentTarget);
     syncVisualToMarkdown(event.currentTarget.innerHTML);
   };
 
